@@ -15,10 +15,10 @@ public class CvrResponse {
 	@JsonProperty("_shards")
 	private Shards shards;
 	@JsonProperty("hits")
-	private Hits result;
+	private SearchResult result;
 
 	@Data
-	private static class Shards {
+	static class Shards {
 		@JsonProperty("total")
 		private Integer total;
 		@JsonProperty("successful")
@@ -30,17 +30,37 @@ public class CvrResponse {
 	}
 
 	@Data
-	public static class Hits {
+	static class CvrBusinessHit {
+		@JsonProperty("_index")
+		private String index;
+		@JsonProperty("_type")
+		private String indexType;
+		@JsonProperty("_id")
+		private String id;
+		@JsonProperty("_score")
+		private Double score;
+		@JsonProperty("_source")
+		private SourceInfo source;
+
+		@Data
+
+		static class SourceInfo {
+			@JsonProperty("Vrvirksomhed")
+			private CvrCompanyInfo businessInfo;
+		}
+	}
+
+	@Data
+	public static class SearchResult {
 		@JsonProperty("total")
 		private Long total;
 		@JsonProperty("max_score")
 		private Double maxScore;
-
-		private List<CvrBusinessInfo> businessInfoList = new ArrayList<>();
+		private List<CvrCompanyInfo> companies = new ArrayList<>();
 
 		@JsonProperty("hits")
-		public void setBusinessInfoList(List<CvrBusinessHit> hits) {
-			hits.forEach(hit -> businessInfoList.add(hit.getSource().getBusinessInfo()));
+		public void setCompanies(List<CvrBusinessHit> hits) {
+			hits.forEach(hit -> companies.add(hit.getSource().getBusinessInfo()));
 		}
 	}
 }

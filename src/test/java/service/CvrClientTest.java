@@ -1,7 +1,7 @@
 package service;
 
 
-import io.github.clivelewis.cvrclient.service.CvrClient;
+import io.github.clivelewis.cvrclient.CvrClient;
 import org.junit.Before;
 
 class CvrClientTest {

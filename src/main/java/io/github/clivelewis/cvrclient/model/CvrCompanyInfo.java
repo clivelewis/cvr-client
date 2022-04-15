@@ -8,7 +8,7 @@ import java.util.Date;
 import java.util.List;
 
 @Data
-public class CvrBusinessInfo implements Serializable {
+public class CvrCompanyInfo implements Serializable {
 	@JsonProperty("cvrNummer")
 	private Long cvrNumber;
 
