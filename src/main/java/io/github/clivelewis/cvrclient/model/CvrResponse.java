@@ -43,7 +43,6 @@ public class CvrResponse {
 		private SourceInfo source;
 
 		@Data
-
 		static class SourceInfo {
 			@JsonProperty("Vrvirksomhed")
 			private CvrCompanyInfo businessInfo;

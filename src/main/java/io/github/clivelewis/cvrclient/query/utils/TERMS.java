@@ -1,4 +1,4 @@
-package io.github.clivelewis.cvrclient.query;
+package io.github.clivelewis.cvrclient.query.utils;
 
 /**
  * Utility class with the list of terms that can be used for queries.

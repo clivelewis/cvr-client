@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import io.github.clivelewis.cvrclient.model.CvrCompanyInfo;
 import io.github.clivelewis.cvrclient.model.CvrResponse;
 import io.github.clivelewis.cvrclient.query.CvrQuery;
-import io.github.clivelewis.cvrclient.query.TERMS;
+import io.github.clivelewis.cvrclient.query.utils.TERMS;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collections;

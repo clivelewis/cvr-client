@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.github.clivelewis.cvrclient.query.CvrQuery;
+import io.github.clivelewis.cvrclient.query.utils.TERMS;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -37,4 +38,19 @@ public class CvrQueryBuilderTest {
 		assertTrue(s.contains("\"Vrvirksomhed.hovedbranche.branchekode\" : \"494100\""));
 		System.out.println(s);
 	}
+
+	@Test
+	public void testSimpleMatchQuery() throws JsonProcessingException {
+		CvrQuery cvrQuery = CvrQuery.builder().match(TERMS.CVR, "32616739").build();
+		String s = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(cvrQuery);
+		System.out.println(s);
+	}
+
+	@Test
+	public void testEmptyCvrQuery() throws JsonProcessingException {
+		CvrQuery build = CvrQuery.builder().build();
+		String s = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(build);
+		System.out.println(s);
+	}
 }
+

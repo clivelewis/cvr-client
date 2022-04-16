@@ -55,7 +55,7 @@ public class CvrCompanyInfo implements Serializable {
 	private List<ContactInfo> obligatoryEmails;
 
 	@JsonProperty("livsforloeb")
-	private List<BusinessLifespanInfo> businessLifespans;
+	private List<CompanyLifespanInfo> businessLifespans;
 
 	@JsonProperty("hovedbranche")
 	private List<IndustryInfo> mainBranches;
@@ -173,7 +173,7 @@ public class CvrCompanyInfo implements Serializable {
 	}
 
 	@Data
-	private static class BusinessLifespanInfo {
+	private static class CompanyLifespanInfo {
 		@JsonProperty("periode")
 		private Period period;
 		@JsonProperty("sidstOpdateret")

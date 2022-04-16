@@ -1,5 +1,6 @@
 package io.github.clivelewis.cvrclient.query;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 
@@ -9,9 +10,12 @@ import java.util.List;
 import java.util.Map;
 
 @JsonRootName("query")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class CvrQuery {
 	@JsonProperty("bool")
 	private BoolQuery bool;
+	@JsonProperty("match")
+	private MatchQuery matchQuery;
 
 	private CvrQuery() {
 	}
@@ -21,7 +25,7 @@ public class CvrQuery {
 	}
 
 
-	public static class CvrQueryBuilder {
+	public static class CvrQueryBuilder implements Buildable {
 		private final CvrQuery cvrQuery;
 
 		public CvrQueryBuilder() {
@@ -33,46 +37,16 @@ public class CvrQuery {
 			this.cvrQuery.bool.parent = this.cvrQuery;
 			return this.cvrQuery.bool;
 		}
-	}
 
-	public BoolQuery bool() {
-		this.bool = new BoolQuery();
-		this.bool.parent = this;
-
-		return this.bool;
-	}
-
-
-	public static class BoolQuery {
-		@JsonProperty("must")
-		private List<MustQuery> mustQueries = new ArrayList<>();
-		private CvrQuery parent;
-
-		public MustQuery must() {
-			MustQuery mustQuery = new MustQuery();
-			mustQuery.parent = parent;
-			this.mustQueries.add(mustQuery);
-			return mustQuery;
+		public MatchQuery match(String term, String value) {
+			this.cvrQuery.matchQuery = new MatchQuery(term, value);
+			this.cvrQuery.matchQuery.parent = cvrQuery;
+			return this.cvrQuery.matchQuery;
 		}
 
+		@Override
 		public CvrQuery build() {
-			return parent;
-		}
-	}
-
-	public static class MustQuery {
-		@JsonProperty("term")
-		private Map<String, String> terms = new HashMap<>();
-		private CvrQuery parent;
-
-
-		public MustQuery addTerm(String name, String value) {
-			this.terms.put(name, value);
-			return this;
-		}
-
-		public CvrQuery build() {
-			return this.parent;
+			return this.cvrQuery;
 		}
 	}
 }
