@@ -5,18 +5,23 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.github.clivelewis.cvrclient.model.CvrCompanyDataModel;
+import io.github.clivelewis.cvrclient.model.CvrScrollResponse;
 import io.github.clivelewis.cvrclient.service.CvrFieldAnnotationProcessor;
 import io.github.clivelewis.cvrclient.utils.TERMS;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.index.query.MatchQueryBuilder;
+import org.elasticsearch.action.search.*;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.*;
+import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.*;
 
 @Slf4j
-public class CvrClient {
+public class CvrClient implements Closeable {
 	private final CvrApiClient apiClient;
 	private final ObjectMapper objectMapper;
 
@@ -28,7 +33,6 @@ public class CvrClient {
 		this.objectMapper.enable(DeserializationFeature.UNWRAP_ROOT_VALUE);
 		log.info("CvrApiClient Started!");
 	}
-
 
 	public <T extends CvrCompanyDataModel> Optional<T> findCompanyByCvrNumber(Long cvrNumber, Class<T> resultModel) throws JsonProcessingException {
 		Objects.requireNonNull(cvrNumber, "CVR Number is required.");
@@ -44,7 +48,7 @@ public class CvrClient {
 		searchRequest.source(searchSourceBuilder);
 
 
-		List<T> cvrResponse = this.sendCompanySearchRequest(searchRequest, resultModel);
+		List<T> cvrResponse = this.searchInCompanyIndex(searchRequest, resultModel);
 		if (cvrResponse != null && !cvrResponse.isEmpty()) {
 			if (cvrResponse.size() > 1)
 				log.warn("Somehow found more than 1 company with the same CVR Number. Returning the first match.");
@@ -52,6 +56,128 @@ public class CvrClient {
 			return Optional.of(cvrResponse.get(0));
 		} else return Optional.empty();
 	}
+
+
+	public <T extends CvrCompanyDataModel> List<T> findAllActiveCompaniesByBranchCode(String branchCode, Class<T> resultModel) throws JsonProcessingException {
+		Objects.requireNonNull(branchCode, "Branch Code(Number) is required.");
+		Objects.requireNonNull(resultModel, "Result Model class in required.");
+
+		log.info("Find All active companies with main branch code {}", branchCode);
+
+		final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(5L));
+		SearchRequest searchRequest = new SearchRequest();
+		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+
+		BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+		boolQueryBuilder.mustNot(QueryBuilders.existsQuery(TERMS.LIFECYCLE_END_DATE));
+		boolQueryBuilder.must(new MatchQueryBuilder(TERMS.BRANCH_NUMBER, branchCode));
+
+		searchSourceBuilder.query(boolQueryBuilder);
+		searchSourceBuilder.size(20);
+		processFieldAnnotations(resultModel, searchSourceBuilder);
+		searchRequest.source(searchSourceBuilder);
+		searchRequest.scroll(scroll);
+
+		SearchResponse searchResponse = this.apiClient.searchInCompanyIndex(searchRequest);
+		long totalHits = searchResponse.getHits().getTotalHits();
+		log.info("Total active companies in branch: {}. ", totalHits);
+
+		List<T> result = new ArrayList<>();
+		String scrollId = searchResponse.getScrollId();
+		SearchHit[] hits = searchResponse.getHits().getHits();
+		while (hits != null && hits.length > 0) {
+			if (result.size() % 1000 == 0) log.info("Processed {}/{} records", result.size(), totalHits);
+			for (SearchHit hit : hits) {
+				String sourceAsString = hit.getSourceAsString();
+				result.add(this.objectMapper.readValue(sourceAsString, resultModel));
+			}
+
+
+			SearchScrollRequest searchScrollRequest = new SearchScrollRequest(scrollId);
+			searchScrollRequest.scroll(scroll);
+			searchResponse = apiClient.searchScroll(searchScrollRequest);
+
+			scrollId = searchResponse.getScrollId();
+			hits = searchResponse.getHits().getHits();
+		}
+
+		apiClient.clearScroll(scrollId);
+		log.info("DONE! Processed {}/{} records", result.size(), totalHits);
+
+		return result;
+	}
+
+	public <T extends CvrCompanyDataModel> List<T> searchInCompanyIndex(SearchRequest request, Class<T> resultModel) throws JsonProcessingException {
+		Objects.requireNonNull(request, "Request can't be null");
+		Objects.requireNonNull(resultModel, "Result Model Class can't be null");
+
+
+		List<String> elementsAsJson = this.searchInCompanyIndex(request);
+		if (elementsAsJson == null || elementsAsJson.isEmpty()) return null;
+
+		List<T> companyInfoList = new ArrayList<>();
+
+		for (String elementAsJson : elementsAsJson) {
+			companyInfoList.add(this.objectMapper.readValue(elementAsJson, resultModel));
+		}
+
+		return companyInfoList;
+	}
+
+	public List<String> searchInCompanyIndex(SearchRequest request) {
+		Objects.requireNonNull(request, "Request can't be null");
+		SearchResponse searchResponse = this.apiClient.searchInCompanyIndex(request);
+		SearchHit[] searchHits = searchResponse.getHits().getHits();
+
+		if (searchHits == null || searchHits.length == 0) return null;
+
+		return hitsToJson(searchHits);
+	}
+
+	public <T extends CvrCompanyDataModel> CvrScrollResponse<T> searchScroll(SearchScrollRequest request, Class<T> resultModel) throws JsonProcessingException {
+		Objects.requireNonNull(request, "Request can't be null");
+
+		Map<String, Object> searchScrollResult = this.searchScroll(request);
+
+		CvrScrollResponse<T> cvrScrollResponse = new CvrScrollResponse<>();
+		cvrScrollResponse.setScrollId(searchScrollResult.get("scrollId").toString());
+		Object data = searchScrollResult.get("data");
+
+		if (data instanceof List) {
+			List<T> resultData = new ArrayList<>();
+			List<String> dataAsJson = (List<String>) data;
+
+			for (String element : dataAsJson) {
+				resultData.add(this.objectMapper.readValue(element, resultModel));
+			}
+
+			cvrScrollResponse.setData(resultData);
+		} else cvrScrollResponse.setData(null);
+
+		return cvrScrollResponse;
+	}
+
+	public Map<String, Object> searchScroll(SearchScrollRequest request) {
+		Objects.requireNonNull(request, "Request can't be null");
+		SearchResponse searchResponse = this.apiClient.searchScroll(request);
+		SearchHit[] hits = searchResponse.getHits().getHits();
+
+		List<String> dataAsJson = this.hitsToJson(hits);
+		HashMap<String, Object> result = new HashMap<>();
+		result.put("scrollId", searchResponse.getScrollId());
+		result.put("data", dataAsJson);
+		return result;
+	}
+
+	private List<String> hitsToJson(SearchHit[] searchHits) {
+		List<String> resultAsJsonString = new ArrayList<>();
+		for (SearchHit searchHit : searchHits) {
+			String sourceAsString = searchHit.getSourceAsString();
+			resultAsJsonString.add(sourceAsString);
+		}
+		return resultAsJsonString;
+	}
+
 
 	private <T extends CvrCompanyDataModel> void processFieldAnnotations(Class<T> resultModel, SearchSourceBuilder searchSourceBuilder) {
 		Set<String> fields = CvrFieldAnnotationProcessor.getFields(resultModel);
@@ -62,36 +188,18 @@ public class CvrClient {
 		}
 	}
 
-//	public List<CvrCompanyInfo> findAllCompaniesByBranchCode(String branchCode) {
-//		SearchRequest searchRequest = new SearchRequest();
-//		SearchSourceBuilder source = new SearchSourceBuilder();
-//		source.query(new MatchQueryBuilder(TERMS.BRANCH_NUMBER, branchCode));
-//		searchRequest.source(source);
-//
-//		List<Cz> cvrResponse = this.sendRequest(searchRequest);
-//		if (cvrResponse == null) return Collections.emptyList();
-//		else return cvrResponse;
-//	}
-
-	private <T> List<T> sendCompanySearchRequest(SearchRequest request, Class<T> resultModel) throws JsonProcessingException {
-		Objects.requireNonNull(request, "Request can't be null");
-		Objects.requireNonNull(resultModel, "Result Model Class can't be null");
-
-
-		SearchHit[] searchHits = this.apiClient.searchInCompanyIndex(request);
-		if (searchHits == null || searchHits.length == 0) return null;
-
-		List<T> companyInfoList = new ArrayList<>();
-
-		for (SearchHit searchHit : searchHits) {
-			String sourceAsString = searchHit.getSourceAsString();
-			companyInfoList.add(this.objectMapper.readValue(sourceAsString, resultModel));
-		}
-		return companyInfoList;
+	public ObjectMapper objectMapper() {
+		return this.objectMapper;
 	}
 
-	public CvrApiClient getCvrApiClient() {
+	public CvrApiClient apiClient() {
 		return this.apiClient;
 	}
 
+	@Override
+	public void close() throws IOException {
+		if (this.apiClient() != null && this.apiClient().getElasticRestClient() != null) {
+			this.apiClient().getElasticRestClient().close();
+		}
+	}
 }
