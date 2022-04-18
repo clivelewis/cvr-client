@@ -16,7 +16,7 @@ public class CvrFieldAnnotationProcessor {
 
 		for (Field field : providedClass.getDeclaredFields()) {
 			CvrField cvrField = field.getAnnotation(CvrField.class);
-			if (cvrField != null) fields.add(prefix + cvrField.value());
+			if (cvrField != null && !cvrField.value().isEmpty()) fields.add(prefix + cvrField.value());
 		}
 
 		return fields;
