@@ -1,83 +1,70 @@
 package io.github.clivelewis.cvrclient;
 
 import io.github.clivelewis.cvrclient.exception.CvrApiException;
+import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.search.SearchHit;
 
 import java.io.IOException;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 
 /**
  * Class for API calls to CVR. Uses Java 11+ HttpClient.
  * CVR uses Basic Authentication (Login/Password) and
  * provides POST endpoints to access their data.
+ *
  * @see HttpClient
  */
 @Slf4j
-class CvrApiClient {
-	private static final String SEARCH_API_URL = "http://distribution.virk.dk/cvr-permanent/virksomhed/_search";
+public class CvrApiClient {
 
-	private final HttpClient httpClient;
+	private final RestHighLevelClient elasticRestClient;
 
-	public CvrApiClient(String cvrUsername, String cvrPassword) {
-		this.httpClient = HttpClient.newBuilder()
-				.connectTimeout(Duration.of(10, ChronoUnit.SECONDS))
-				.version(HttpClient.Version.HTTP_2)
-				.authenticator(getAuthenticator(cvrUsername, cvrPassword)).build();
+
+	CvrApiClient(String cvrUsername, String cvrPassword) {
+		RestClientBuilder restClientBuilder = RestClient.builder(new HttpHost("distribution.virk.dk"));
+		restClientBuilder.setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(getCredentialsProvider(cvrUsername, cvrPassword)));
+		restClientBuilder.setPathPrefix("cvr-permanent");
+		this.elasticRestClient = new RestHighLevelClient(restClientBuilder);
 	}
 
 
-	private Authenticator getAuthenticator(String username, String password) {
-		return new Authenticator() {
-			@Override
-			protected PasswordAuthentication getPasswordAuthentication() {
-				return new PasswordAuthentication(username, password.toCharArray());
-			}
-		};
-	}
-
-
-	/** Send Synchronous request to CVR.
-	 * @param jsonRequestBody JSON request body
-	 * @return Response in a JSON format
-	 * @throws CvrApiException if any other exception occurs or response status is not 200
-	 */
-	public String sendRequest(String jsonRequestBody) throws CvrApiException {
-		HttpRequest request = HttpRequest.newBuilder().uri(getCvrSearchUri())
-				.setHeader("Accept", "application/json")
-				.setHeader("Content-type", "application/json")
-				.POST(HttpRequest.BodyPublishers.ofString(jsonRequestBody)).build();
-
+	public SearchHit[] searchInCompanyIndex(SearchRequest request) throws CvrApiException {
+		request.indices("virksomhed");
 		try {
-			HttpResponse<String> response = this.httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-			if (response.statusCode() != 200) {
-				throw new CvrApiException("CVR responded with " + response.statusCode() + " status code instead of 200.");
+			SearchResponse searchResponse = this.elasticRestClient.search(request, RequestOptions.DEFAULT);
+			if (searchResponse.status().getStatus() != 200) {
+				throw new CvrApiException("CVR responded with " + searchResponse.status().getStatus() + " status code instead of 200.");
 			}
 
-			return response.body();
+			return searchResponse.getHits().getHits();
 		} catch (IOException e) {
 			log.error("IOException while trying to send request to CVR API.");
 			throw new CvrApiException(e);
-		} catch (InterruptedException e) {
-			log.error("Interrupted while trying to send request to CVR API.");
-			throw new CvrApiException(e);
 		}
 	}
 
-	private URI getCvrSearchUri() {
-		try {
-			return new URI(SEARCH_API_URL);
-		} catch (URISyntaxException e) {
-			log.error("Error while creating URI from input - {}", SEARCH_API_URL);
-			throw new CvrApiException(e);
-		}
+	public RestHighLevelClient getElasticRestClient() {
+		return this.elasticRestClient;
 	}
+
+	private CredentialsProvider getCredentialsProvider(String username, String password) {
+		final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+		credentialsProvider.setCredentials(AuthScope.ANY,
+				new UsernamePasswordCredentials(username, password));
+		return credentialsProvider;
+	}
+
+
 }

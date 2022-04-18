@@ -1,4 +1,4 @@
-package io.github.clivelewis.cvrclient.model;
+package io.github.clivelewis.cvrclient.model.internal;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

@@ -1,14 +1,21 @@
 package io.github.clivelewis.cvrclient.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.github.clivelewis.cvrclient.model.internal.CompanyLifespanInfo;
+import io.github.clivelewis.cvrclient.model.internal.CompanyNameInfo;
+import io.github.clivelewis.cvrclient.model.internal.IndustryInfo;
+import io.github.clivelewis.cvrclient.model.internal.Period;
 import lombok.Data;
 
-import java.io.Serializable;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Data
-public class CvrCompanyInfo implements Serializable {
+public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 	@JsonProperty("cvrNummer")
 	private Long cvrNumber;
 
@@ -22,10 +29,10 @@ public class CvrCompanyInfo implements Serializable {
 	private Boolean advertisementProtected;
 
 	@JsonProperty("navne")
-	private List<NameInfo> names;
+	private List<CompanyNameInfo> names;
 
 	@JsonProperty("binavne")
-	private List<NameInfo> additionalNames;
+	private List<CompanyNameInfo> additionalNames;
 
 	@JsonProperty("postadresse")
 	private List<AddressInfo> postalAddresses;
@@ -96,6 +103,18 @@ public class CvrCompanyInfo implements Serializable {
 	@JsonProperty("deltagerRelation")
 	private List<ParticipationInfo> participants;
 
+	private Map<String, Object> fieldsWithoutMapping = new HashMap<>();
+
+	@JsonAnyGetter
+	public Map<String, Object> getFieldsWithoutMapping() {
+		return this.fieldsWithoutMapping;
+	}
+
+	@JsonAnySetter
+	public void setFieldWithoutMapping(String field, Object value) {
+		this.fieldsWithoutMapping.put(field, value);
+	}
+
 	@Data
 	private static class RegistrationNumberInfo {
 		@JsonProperty("regnummer")
@@ -104,17 +123,6 @@ public class CvrCompanyInfo implements Serializable {
 		private Period period;
 		@JsonProperty("sidstOpdateret")
 		private Date lastUpdated;
-	}
-
-	@Data
-	private static class NameInfo {
-		@JsonProperty("navn")
-		private String name;
-		@JsonProperty("periode")
-		private Period period;
-		@JsonProperty("sidstOpdateret")
-		private Date lastUpdated;
-
 	}
 
 	@Data
@@ -166,26 +174,6 @@ public class CvrCompanyInfo implements Serializable {
 		private String value;
 		@JsonProperty("hemmelig")
 		private Boolean isSecret;
-		@JsonProperty("periode")
-		private Period period;
-		@JsonProperty("sidstOpdateret")
-		private Date lastUpdated;
-	}
-
-	@Data
-	private static class CompanyLifespanInfo {
-		@JsonProperty("periode")
-		private Period period;
-		@JsonProperty("sidstOpdateret")
-		private Date lastUpdated;
-	}
-
-	@Data
-	private static class IndustryInfo {
-		@JsonProperty("branchekode")
-		private String code;
-		@JsonProperty("branchetekst")
-		private String name;
 		@JsonProperty("periode")
 		private Period period;
 		@JsonProperty("sidstOpdateret")
@@ -344,7 +332,7 @@ public class CvrCompanyInfo implements Serializable {
 			private Date lastUpdated;
 
 			@JsonProperty("navne")
-			private List<NameInfo> names;
+			private List<CompanyNameInfo> names;
 
 			@JsonProperty("adresseHemmelig")
 			private Boolean isAddressSecret;
@@ -376,7 +364,7 @@ public class CvrCompanyInfo implements Serializable {
 			@JsonProperty("hovedtype")
 			private String mainType;
 			@JsonProperty("organisationsNavn")
-			private List<NameInfo> organizationNames;
+			private List<CompanyNameInfo> organizationNames;
 			@JsonProperty("attributter")
 			private List<AttributeInfo> attributes;
 			@JsonProperty("medlemsData")
