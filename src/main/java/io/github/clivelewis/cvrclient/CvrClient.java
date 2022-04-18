@@ -26,6 +26,7 @@ public class CvrClient {
 		this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 		this.objectMapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
 		this.objectMapper.enable(DeserializationFeature.UNWRAP_ROOT_VALUE);
+		log.info("CvrApiClient Started!");
 	}
 
 

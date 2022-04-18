@@ -37,6 +37,7 @@ public class CvrApiClient {
 		restClientBuilder.setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(getCredentialsProvider(cvrUsername, cvrPassword)));
 		restClientBuilder.setPathPrefix("cvr-permanent");
 		this.elasticRestClient = new RestHighLevelClient(restClientBuilder);
+		log.info("ElasticSearch RestHighLevelClient Started!");
 	}
 
 

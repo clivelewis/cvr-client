@@ -24,6 +24,18 @@ public class CvrFieldAnnotationProcessor {
 
 	private static <T> String getPrefix(Class<T> providedClass) {
 		CvrFieldRoot rootValue = providedClass.getAnnotation(CvrFieldRoot.class);
+		// Check implemented interfaces if interface is not on the main class.
+		if (rootValue == null) {
+			Class<?>[] interfaces = providedClass.getInterfaces();
+			for (Class<?> anInterface : interfaces) {
+				CvrFieldRoot annotation = anInterface.getAnnotation(CvrFieldRoot.class);
+				if (annotation != null) {
+					rootValue = annotation;
+					break;
+				}
+			}
+		}
+
 		return rootValue == null ? "" : rootValue.value() + ".";
 	}
 }
