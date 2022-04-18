@@ -348,7 +348,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 		}
 
 		@Data
-		private static class OfficeInfo {
+		public static class OfficeInfo {
 			@JsonProperty("penhed")
 			private ParticipantInfo unit;
 
@@ -358,7 +358,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 		}
 
 		@Data
-		private static class OrganizationInfo {
+		public static class OrganizationInfo {
 			@JsonProperty("enhedsNummerOrganisation")
 			private Long organizationNumber;
 			@JsonProperty("hovedtype")
@@ -371,7 +371,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 			private List<MemberData> membersData;
 
 			@Data
-			private static class MemberData {
+			public static class MemberData {
 				@JsonProperty("attributter")
 				private List<AttributeInfo> attributes;
 			}

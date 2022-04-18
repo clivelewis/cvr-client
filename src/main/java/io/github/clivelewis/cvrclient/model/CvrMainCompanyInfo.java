@@ -95,7 +95,7 @@ public class CvrMainCompanyInfo implements CvrCompanyDataModel {
 	}
 
 	@Data
-	private static class AddressInfo {
+	public static class AddressInfo {
 		@JsonProperty("landekode")
 		private String countryCode;
 		@JsonProperty("fritekst")
@@ -124,7 +124,7 @@ public class CvrMainCompanyInfo implements CvrCompanyDataModel {
 		private Date lastUpdated;
 
 		@Data
-		private static class MunicipalityInfo {
+		public static class MunicipalityInfo {
 			@JsonProperty("kommuneKode")
 			private Integer code;
 			@JsonProperty("kommuneNavn")
@@ -138,7 +138,7 @@ public class CvrMainCompanyInfo implements CvrCompanyDataModel {
 
 
 	@Data
-	private static class ContactInfo {
+	public static class ContactInfo {
 		@JsonProperty("kontaktoplysning")
 		private String value;
 		@JsonProperty("hemmelig")
