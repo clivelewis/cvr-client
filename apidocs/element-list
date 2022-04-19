@@ -1,0 +1,7 @@
+io.github.clivelewis.cvrclient
+io.github.clivelewis.cvrclient.annotations
+io.github.clivelewis.cvrclient.exception
+io.github.clivelewis.cvrclient.model
+io.github.clivelewis.cvrclient.model.internal
+io.github.clivelewis.cvrclient.service
+io.github.clivelewis.cvrclient.utils
