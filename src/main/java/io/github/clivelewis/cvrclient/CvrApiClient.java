@@ -14,15 +14,17 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 
 import java.io.IOException;
-import java.net.http.HttpClient;
 import java.util.Objects;
 
+
 /**
- * Class for API calls to CVR. Uses Java 11+ HttpClient.
- * CVR uses Basic Authentication (Login/Password) and
- * provides POST endpoints to access their data.
+ * Abstraction layer over ElasticSearch's {@link RestHighLevelClient} class. <br>
+ * Creates an instance of RestHighLevelClient and provides methods to call available API endpoints. <br><br>
  *
- * @see HttpClient
+ * CVR uses ElasticSearch as their engine and provides API endpoints to make search requests using ElasticSearch queries. <br>
+ * We cannot modify the data in the database so there is no reason to provide update/delete/create methods in this class. <br>
+ * You can call getElasticRestClient() method if you want to access RestHighLevelClient directly.
+ *
  */
 @Slf4j
 public class CvrApiClient {

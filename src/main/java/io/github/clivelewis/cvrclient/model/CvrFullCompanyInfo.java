@@ -14,6 +14,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * <p>
+ * Representation of the CVR Company Data response.<br>
+ * Should contain <strong>all</strong> possible fields from the response body.<br>
+ * See JsonProperty to understand what is the name of the field in the response body.<br>
+ * All fields without mapping are stored in the <strong>fieldsWithoutMapping</strong> variable.
+ * </p>
+ */
 @Data
 public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 	@JsonProperty("cvrNummer")

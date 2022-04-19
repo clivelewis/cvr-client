@@ -3,11 +3,14 @@ package io.github.clivelewis.cvrclient.service;
 import io.github.clivelewis.cvrclient.annotations.CvrField;
 import io.github.clivelewis.cvrclient.annotations.CvrFieldRoot;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Annotation processor for {@link CvrField} and {@link CvrFieldRoot}. <br>
+ * Extracts CVR field names from the model class.
+ */
 public class CvrFieldAnnotationProcessor {
 
 	public static <T> Set<String> getFields(Class<T> providedClass) {

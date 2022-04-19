@@ -9,9 +9,13 @@ import io.github.clivelewis.cvrclient.model.CvrScrollResponse;
 import io.github.clivelewis.cvrclient.service.CvrFieldAnnotationProcessor;
 import io.github.clivelewis.cvrclient.utils.TERMS;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.action.search.*;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.query.*;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.MatchQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -20,11 +24,27 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * Main class. Creates an instance of {@link CvrApiClient} and provides
+ * high-level methods to access data from CVR API. <br>
+ * It is recommended to create 1 instance of this class and use it throughout your application.<br>
+ * Main goal of this class is to create an easy-to-use abstraction layer over
+ * API calls and ElasticSearch Query creation. <br><br>
+ *
+ * If you want to have more control (or expand functionality) you can access
+ * ElasticSearch Java Client by calling apiClient().getElasticRestClient();
+ *
+ */
 @Slf4j
 public class CvrClient implements Closeable {
 	private final CvrApiClient apiClient;
 	private final ObjectMapper objectMapper;
 
+	/**
+	 * Create an instance of CvrClient.
+	 * @param cvrUsername CVR username (or userId)
+	 * @param cvrPassword CVR password
+	 */
 	public CvrClient(String cvrUsername, String cvrPassword) {
 		this.apiClient = new CvrApiClient(cvrUsername, cvrPassword);
 		this.objectMapper = new ObjectMapper();
@@ -34,6 +54,14 @@ public class CvrClient implements Closeable {
 		log.info("CvrApiClient Started!");
 	}
 
+	/**
+	 * Find company by CVR number.
+	 * @param cvrNumber CVR Number
+	 * @param resultModel Model class for deserialized JSON company data.
+	 * @param <T> CvrCompanyDataModel implementation.
+	 * @return Optional of CVR company data model.
+	 * @throws JsonProcessingException If Jackson couldn't deserialize JSON to our model.
+	 */
 	public <T extends CvrCompanyDataModel> Optional<T> findCompanyByCvrNumber(Long cvrNumber, Class<T> resultModel) throws JsonProcessingException {
 		Objects.requireNonNull(cvrNumber, "CVR Number is required.");
 		Objects.requireNonNull(resultModel, "Result Model class in required.");
@@ -58,6 +86,15 @@ public class CvrClient implements Closeable {
 	}
 
 
+	/**
+	 * Find all ACTIVE companies in a specified branch (industry).
+	 * This method uses Search Scroll Query to retrieve large amount of entries.
+	 * @param branchCode Branch (Industry) code.
+	 * @param resultModel Model class for deserialized JSON company data.
+	 * @param <T> CvrCompanyDataModel implementation.
+	 * @return List of CVR company data models. Empty list if no data was found.
+	 * @throws JsonProcessingException If Jackson couldn't deserialize JSON to our model.
+	 */
 	public <T extends CvrCompanyDataModel> List<T> findAllActiveCompaniesByBranchCode(String branchCode, Class<T> resultModel) throws JsonProcessingException {
 		Objects.requireNonNull(branchCode, "Branch Code(Number) is required.");
 		Objects.requireNonNull(resultModel, "Result Model class in required.");
@@ -107,13 +144,21 @@ public class CvrClient implements Closeable {
 		return result;
 	}
 
+	/** General method to make search requests in the CVR company index.
+	 * Build your own SearchRequest object, provide CvrCompanyData model implementation and you are good to go.
+	 * @param request any SearchRequest. Check ElasticSearch documentation to understand how to build queries.
+	 * @param resultModel Model class for deserialized JSON company data.
+	 * @param <T> CvrCompanyDataModel implementation.
+	 * @return List of CVR company data models. Empty list if no data was found.
+	 * @throws JsonProcessingException  If Jackson couldn't deserialize JSON to our model.
+	 */
 	public <T extends CvrCompanyDataModel> List<T> searchInCompanyIndex(SearchRequest request, Class<T> resultModel) throws JsonProcessingException {
 		Objects.requireNonNull(request, "Request can't be null");
 		Objects.requireNonNull(resultModel, "Result Model Class can't be null");
 
 
 		List<String> elementsAsJson = this.searchInCompanyIndex(request);
-		if (elementsAsJson == null || elementsAsJson.isEmpty()) return null;
+		if (elementsAsJson == null || elementsAsJson.isEmpty()) return Collections.emptyList();
 
 		List<T> companyInfoList = new ArrayList<>();
 
@@ -124,12 +169,17 @@ public class CvrClient implements Closeable {
 		return companyInfoList;
 	}
 
+	/**
+	 * General method to make search requests in the CVR company index.
+	 * @param request any SearchRequest. Check ElasticSearch documentation to understand how to build queries.
+	 * @return List where each element is a JSON representation of company data. Empty List if nothing was found or something went wrong.
+	 */
 	public List<String> searchInCompanyIndex(SearchRequest request) {
 		Objects.requireNonNull(request, "Request can't be null");
 		SearchResponse searchResponse = this.apiClient.searchInCompanyIndex(request);
 		SearchHit[] searchHits = searchResponse.getHits().getHits();
 
-		if (searchHits == null || searchHits.length == 0) return null;
+		if (searchHits == null || searchHits.length == 0) return Collections.emptyList();
 
 		return hitsToJson(searchHits);
 	}
@@ -169,6 +219,7 @@ public class CvrClient implements Closeable {
 		return result;
 	}
 
+
 	private List<String> hitsToJson(SearchHit[] searchHits) {
 		List<String> resultAsJsonString = new ArrayList<>();
 		for (SearchHit searchHit : searchHits) {
@@ -188,14 +239,23 @@ public class CvrClient implements Closeable {
 		}
 	}
 
+	/**
+	 * Get instance of configured ObjectMapper that is used for all deserialization in this class.
+	 * @return ObjectMapper instance
+	 */
 	public ObjectMapper objectMapper() {
 		return this.objectMapper;
 	}
 
+	/** Get instance of {@link CvrApiClient}.
+	 * @return CvrApiClient instance
+	 */
 	public CvrApiClient apiClient() {
 		return this.apiClient;
 	}
 
+	/** Release resources.
+	 */
 	@Override
 	public void close() throws IOException {
 		if (this.apiClient() != null && this.apiClient().getElasticRestClient() != null) {

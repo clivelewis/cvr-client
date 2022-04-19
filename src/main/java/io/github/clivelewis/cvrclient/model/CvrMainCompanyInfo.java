@@ -11,6 +11,10 @@ import lombok.Data;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Representation of the CVR Company Data response.<br>
+ * Contains only fields that author subjectively considers important.<br>
+ */
 @Data
 public class CvrMainCompanyInfo implements CvrCompanyDataModel {
 
