@@ -12,6 +12,15 @@ CVR stores data in the **ElasticSearch 6.8** database and provides API endpoints
 This project uses ElasticSearch [JavaHighLevelRestClient](https://www.elastic.co/guide/en/elasticsearch/client/java-rest/6.8/java-rest-high.html "JavaHighLevelRestClient") and provides an abstraction layer over it so you don't have to worry about initialization and configuration process. We don't need a lot of JavaHighLevelRestClient functionality (like data update/delete) because CVR allows only data reading.
 
 ## Quick Start
+#### Maven Dependency
+>Java 11+ is required
+```xml
+<dependency>
+  <groupId>io.github.clivelewis</groupId>
+  <artifactId>cvr-client</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
 #### Initialization
 1. Get your credentials from CVR. You can do it [**here**](https://datacvr.virk.dk/artikel/system-til-system-adgang-til-cvr-data "here"). You cannot proceed until you have your own userId and password.
 
