@@ -23,6 +23,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Main class. Creates an instance of {@link CvrApiClient} and provides
@@ -195,8 +196,7 @@ public class CvrClient implements Closeable {
 
 		if (data instanceof List) {
 			List<T> resultData = new ArrayList<>();
-			List<String> dataAsJson = (List<String>) data;
-
+			List<String> dataAsJson = ((List<?>) data).stream().map(Object::toString).collect(Collectors.toList());
 			for (String element : dataAsJson) {
 				resultData.add(this.objectMapper.readValue(element, resultModel));
 			}

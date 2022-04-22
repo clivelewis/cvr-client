@@ -115,7 +115,7 @@ public class CvrMainCompanyInfo implements CvrCompanyDataModel {
 		@JsonProperty("husnummerTil")
 		private Integer houseNumberTo;
 		@JsonProperty("etage")
-		private Integer floor;
+		private String floor;
 		@JsonProperty("conavn")
 		private String nameOfCaretaker; // The one who is responsible for this place
 		@JsonProperty("postboks")

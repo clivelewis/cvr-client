@@ -67,7 +67,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 	private List<ContactInfo> websites;
 
 	@JsonProperty("obligatoriskEmail")
-	private List<ContactInfo> obligatoryEmails;
+	private List<ContactInfo> obligatoryEmails; // Always (or almost always) empty.
 
 	@JsonProperty("livsforloeb")
 	private List<CompanyLifespanInfo> businessLifespans;
@@ -111,6 +111,9 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 	@JsonProperty("deltagerRelation")
 	private List<ParticipationInfo> participants;
 
+	@JsonProperty("sidstOpdateret")
+	private Date lastUpdate;
+
 	private Map<String, Object> fieldsWithoutMapping = new HashMap<>();
 
 	@JsonAnyGetter
@@ -124,7 +127,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 	}
 
 	@Data
-	private static class RegistrationNumberInfo {
+	public static class RegistrationNumberInfo {
 		@JsonProperty("regnummer")
 		private String number;
 		@JsonProperty("periode")
@@ -134,7 +137,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 	}
 
 	@Data
-	private static class AddressInfo {
+	public static class AddressInfo {
 		@JsonProperty("landekode")
 		private String countryCode;
 		@JsonProperty("fritekst")
@@ -150,7 +153,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 		@JsonProperty("husnummerTil")
 		private Integer houseNumberTo;
 		@JsonProperty("etage")
-		private Integer floor;
+		private String floor;
 		@JsonProperty("conavn")
 		private String nameOfCaretaker; // The one who is responsible for this place
 		@JsonProperty("postboks")
@@ -163,7 +166,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 		private Date lastUpdated;
 
 		@Data
-		private static class MunicipalityInfo {
+		public static class MunicipalityInfo {
 			@JsonProperty("kommuneKode")
 			private Integer code;
 			@JsonProperty("kommuneNavn")
@@ -177,7 +180,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 
 
 	@Data
-	private static class ContactInfo {
+	public static class ContactInfo {
 		@JsonProperty("kontaktoplysning")
 		private String value;
 		@JsonProperty("hemmelig")
@@ -189,7 +192,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 	}
 
 	@Data
-	private static class StatusInfo {
+	public static class StatusInfo {
 		@JsonProperty("statuskode")
 		private Integer code;
 		@JsonProperty("statustekst")
@@ -205,7 +208,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 	}
 
 	@Data
-	private static class BusinessStatusInfo {
+	public static class BusinessStatusInfo {
 		@JsonProperty("status")
 		private String status;
 		@JsonProperty("periode")
@@ -215,7 +218,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 	}
 
 	@Data
-	private static class BusinessFormInfo {
+	public static class BusinessFormInfo {
 		@JsonProperty("virksomhedsformkode")
 		private Integer code;
 		@JsonProperty("kortBeskrivelse")
@@ -231,7 +234,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 	}
 
 	@Data
-	private static class AnnualEmploymentHistoryEntry {
+	public static class AnnualEmploymentHistoryEntry {
 		@JsonProperty("aar")
 		private Short year;
 		@JsonProperty("antalInklusivEjere")
@@ -253,7 +256,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 	}
 
 	@Data
-	private static class QuarterlyEmploymentHistoryEntry {
+	public static class QuarterlyEmploymentHistoryEntry {
 		@JsonProperty("aar")
 		private Short year;
 		@JsonProperty("kvartal")
@@ -271,7 +274,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 	}
 
 	@Data
-	private static class MonthlyEmploymentHistoryEntry {
+	public static class MonthlyEmploymentHistoryEntry {
 		@JsonProperty("aar")
 		private Short year;
 		@JsonProperty("maaned")
@@ -290,7 +293,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 	}
 
 	@Data
-	private static class AttributeInfo {
+	public static class AttributeInfo {
 		@JsonProperty("sekvensnr")
 		private Integer sequenceNumber;
 		@JsonProperty("type")
@@ -301,7 +304,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 		private List<Value> values;
 
 		@Data
-		private static class Value {
+		public static class Value {
 			@JsonProperty("vaerdi")
 			private String value;
 			@JsonProperty("periode")
@@ -312,7 +315,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 	}
 
 	@Data
-	private static class ParticipationInfo {
+	public static class ParticipationInfo {
 		@JsonProperty("deltager")
 		private ParticipantInfo participant;
 
@@ -323,7 +326,7 @@ public class CvrFullCompanyInfo implements CvrCompanyDataModel {
 		private List<OrganizationInfo> organizations;
 
 		@Data
-		private static class ParticipantInfo {
+		public static class ParticipantInfo {
 			@JsonProperty("enhedsNummer")
 			private Long participantNumber;
 			@JsonProperty("enhedstype")
